@@ -17,16 +17,14 @@ pub fn main() !void {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     std.debug.print("Logs from your program will appear here!\n", .{});
 
-    // Uncomment this block to pass the first stage
-    //
-    // var buf: [1024]u8 = undefined;
-    // while (true) {
-    //     var client_addr: posix.sockaddr = undefined;
-    //     var client_addr_len: posix.socklen_t = @sizeOf(posix.sockaddr);
-    //
-    //     _ = try posix.recvfrom(sock_fd, &buf, 0, &client_addr, &client_addr_len);
-    //
-    //     const response: []const u8 = "";
-    //     _ = try posix.sendto(sock_fd, response, 0, &client_addr, client_addr_len);
-    // }
+    var buf: [1024]u8 = undefined;
+    while (true) {
+        var client_addr: posix.sockaddr = undefined;
+        var client_addr_len: posix.socklen_t = @sizeOf(posix.sockaddr);
+    
+        _ = try posix.recvfrom(sock_fd, &buf, 0, &client_addr, &client_addr_len);
+    
+        const response: []const u8 = "";
+        _ = try posix.sendto(sock_fd, response, 0, &client_addr, client_addr_len);
+    }
 }
