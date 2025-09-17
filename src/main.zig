@@ -4,6 +4,16 @@ const posix = std.posix;
 const Header = @import("message/Header.zig");
 
 pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer {
+        const status = gpa.deinit();
+        //fail test; can't try in defer as defer is executed after we return
+        // if (deinit_status == .leak) expect(false) catch @panic("TEST FAIL");
+        // std.testing.expect(status != .leak) catch @panic("A memory leak!");
+        if (status == .leak) @panic("A memory leak");
+    }
+    _ = gpa.allocator();
+
     const sock_fd = try posix.socket(posix.AF.INET, posix.SOCK.DGRAM, 0);
     defer posix.close(sock_fd);
 
@@ -23,10 +33,12 @@ pub fn main() !void {
         var client_addr: posix.sockaddr = undefined;
         var client_addr_len: posix.socklen_t = @sizeOf(posix.sockaddr);
 
-        _ = try posix.recvfrom(sock_fd, &buf, 0, &client_addr, &client_addr_len);
+        const received_bytes = try posix.recvfrom(sock_fd, &buf, 0, &client_addr, &client_addr_len);
+        const message_id = std.mem.readInt(u16, buf[0..2], .big);
+        const question = buf[12..received_bytes];
 
-        const response = Header{
-            .id = 1234,
+        const header = Header{
+            .id = message_id,
             .qr = 1,
             .opcode = 0,
             .aa = 0,
@@ -35,11 +47,15 @@ pub fn main() !void {
             .ra = 0,
             .z = 0,
             .rcode = 0,
-            .qdcount = 0,
+            .qdcount = 1,
             .ancount = 0,
             .nscount = 0,
             .arcount = 0,
         };
-        _ = try posix.sendto(sock_fd, &response.toBytes(), 0, &client_addr, client_addr_len);
+        var response: [512]u8 = undefined;
+        @memcpy(response[0..12], &header.toBytes());
+        @memcpy(response[12 .. question.len + 12], question);
+
+        _ = try posix.sendto(sock_fd, &response, 0, &client_addr, client_addr_len);
     }
 }
