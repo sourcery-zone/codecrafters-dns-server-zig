@@ -1,6 +1,7 @@
 const std = @import("std");
 const net = std.net;
 const posix = std.posix;
+const Header = @import("message/Header.zig");
 
 pub fn main() !void {
     const sock_fd = try posix.socket(posix.AF.INET, posix.SOCK.DGRAM, 0);
@@ -21,10 +22,24 @@ pub fn main() !void {
     while (true) {
         var client_addr: posix.sockaddr = undefined;
         var client_addr_len: posix.socklen_t = @sizeOf(posix.sockaddr);
-    
+
         _ = try posix.recvfrom(sock_fd, &buf, 0, &client_addr, &client_addr_len);
-    
-        const response: []const u8 = "";
-        _ = try posix.sendto(sock_fd, response, 0, &client_addr, client_addr_len);
+
+        const response = Header{
+            .id = 1234,
+            .qr = 1,
+            .opcode = 0,
+            .aa = 0,
+            .tc = 0,
+            .rd = 0,
+            .ra = 0,
+            .z = 0,
+            .rcode = 0,
+            .qdcount = 0,
+            .ancount = 0,
+            .nscount = 0,
+            .arcount = 0,
+        };
+        _ = try posix.sendto(sock_fd, &response.toBytes(), 0, &client_addr, client_addr_len);
     }
 }

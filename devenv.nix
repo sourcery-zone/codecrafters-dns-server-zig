@@ -5,7 +5,10 @@
   env.GREET = "devenv";
 
   # https://devenv.sh/packages/
-  packages = [];
+  packages = with pkgs; [
+    dig
+    xxd
+  ];
 
   # https://devenv.sh/languages/
   languages.zig = {
