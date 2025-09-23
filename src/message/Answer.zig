@@ -11,12 +11,8 @@ length: u16,
 data: []const u8,
 
 pub fn toBytes(self: Answer, allocator: std.mem.Allocator) ![]u8 {
-    // var response = try allocator.alloc(u8, self.name.len + 10 + self.data.len);
     var response = try allocator.alloc(u8, 12 + self.data.len);
 
-    // TODO consider checking up until the null byte
-    // var offset = self.name.len;
-    // @memcpy(response[0..offset], self.name[0..offset]);
     var offset: usize = 2;
     @memcpy(response[0..offset], &[2]u8{ 0xc0, 0x0c });
 
@@ -55,10 +51,10 @@ test "toBytes" {
     const response_bytes = try response.toBytes(allocator);
     try testing.expectEqualSlices(
         u8,
-        response.name,
-        response_bytes[0..response.name.len],
+        &[2]u8{ 0xC0, 0x0C },
+        response_bytes[0..2],
     );
-    offset += response.name.len;
+    offset += 2;
 
     const expectBigInt = struct {
         fn f(t: type, expected: anytype, actual: anytype) !void {

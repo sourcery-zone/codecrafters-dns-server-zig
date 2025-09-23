@@ -62,7 +62,6 @@ pub fn main() !void {
             .data = "\x08\x08\x08\x08",
         };
 
-        // const answer_length = answer.name.len + 10 + answer.data.len;
         const answer_length = 12 + answer.data.len;
         // TODO feat: answer.len
         var response = try allocator.alloc(u8, 12 + question.len + answer_length);
@@ -72,7 +71,6 @@ pub fn main() !void {
         @memcpy(response[offset..12], &header.toBytes());
         offset += 12;
 
-        // const query_written = query("codecrafters.io", 1, 1, &response);
         @memcpy(response[offset .. question.len + 12], question);
         offset += question.len;
 
