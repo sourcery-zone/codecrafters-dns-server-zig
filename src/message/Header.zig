@@ -48,6 +48,65 @@ pub fn init(
     };
 }
 
+pub fn fromBytes(buf: []u8) Header {
+    var offset: usize = 0;
+    const id = std.mem.readInt(u16, buf[offset..2][0..2], .big);
+    offset += 2;
+
+    const qr: u1 = @intCast(buf[offset] >> 7);
+    const opcode: u4 = @intCast((buf[offset] & 0x78) >> 3);
+    const aa: u1 = @intCast((buf[offset] & 0x4) >> 2);
+    const tc: u1 = @intCast((buf[offset] & 0x2) >> 1);
+    const rd: u1 = @intCast(buf[offset] & 0x1);
+    offset += 1;
+
+    const ra: u1 = @intCast(buf[offset] >> 7);
+    const z: u3 = @intCast((buf[offset] & 0x70) >> 4);
+    const rcode: u4 = @intCast(buf[offset] & 0x0F);
+    offset += 1;
+
+    const qdcount = std.mem.readInt(
+        u16,
+        buf[offset .. offset + 2][0..2],
+        .big,
+    );
+    offset += 2;
+    const ancount = std.mem.readInt(
+        u16,
+        buf[offset .. offset + 2][0..2],
+        .big,
+    );
+    offset += 2;
+    const nscount = std.mem.readInt(
+        u16,
+        buf[offset .. offset + 2][0..2],
+        .big,
+    );
+    offset += 2;
+    const arcount = std.mem.readInt(
+        u16,
+        buf[offset .. offset + 2][0..2],
+        .big,
+    );
+    offset += 2;
+
+    return Header{
+        .id = id,
+        .qr = qr,
+        .opcode = opcode,
+        .aa = aa,
+        .tc = tc,
+        .rd = rd,
+        .ra = ra,
+        .z = z,
+        .rcode = rcode,
+        .qdcount = qdcount,
+        .ancount = ancount,
+        .nscount = nscount,
+        .arcount = arcount,
+    };
+}
+
 pub fn toBytes(self: Header) [12]u8 {
     var result: [12]u8 = undefined;
 

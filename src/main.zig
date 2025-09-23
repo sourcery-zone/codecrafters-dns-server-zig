@@ -35,19 +35,19 @@ pub fn main() !void {
         var client_addr_len: posix.socklen_t = @sizeOf(posix.sockaddr);
 
         const received_bytes = try posix.recvfrom(sock_fd, &buf, 0, &client_addr, &client_addr_len);
-        const message_id = std.mem.readInt(u16, buf[0..2], .big);
+        const qheader = Header.fromBytes(buf[0..12]);
         const question = buf[12..received_bytes];
 
         const header = Header{
-            .id = message_id,
+            .id = qheader.id,
             .qr = 1,
-            .opcode = 0,
+            .opcode = qheader.opcode,
             .aa = 0,
             .tc = 0,
-            .rd = 1,
+            .rd = qheader.rd,
             .ra = 1,
             .z = 0,
-            .rcode = 0,
+            .rcode = if (qheader.opcode == 0) 0 else 4,
             .qdcount = 1,
             .ancount = 1, // Number of answers
             .nscount = 0,
