@@ -2,6 +2,7 @@ const std = @import("std");
 const net = std.net;
 const posix = std.posix;
 const Header = @import("message/Header.zig");
+const Answer = @import("message/Answer.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -12,7 +13,7 @@ pub fn main() !void {
         // std.testing.expect(status != .leak) catch @panic("A memory leak!");
         if (status == .leak) @panic("A memory leak");
     }
-    _ = gpa.allocator();
+    const allocator = gpa.allocator();
 
     const sock_fd = try posix.socket(posix.AF.INET, posix.SOCK.DGRAM, 0);
     defer posix.close(sock_fd);
@@ -43,8 +44,8 @@ pub fn main() !void {
             .opcode = 0,
             .aa = 0,
             .tc = 0,
-            .rd = 0,
-            .ra = 0,
+            .rd = 1,
+            .ra = 1,
             .z = 0,
             .rcode = 0,
             .qdcount = 1,
@@ -52,10 +53,37 @@ pub fn main() !void {
             .nscount = 0,
             .arcount = 0,
         };
-        var response: [512]u8 = undefined;
-        @memcpy(response[0..12], &header.toBytes());
-        @memcpy(response[12 .. question.len + 12], question);
+        const answer = Answer{
+            .name = "\x0ccodecrafters\x02io",
+            .type_ = 1,
+            .class = 1,
+            .ttl = 60,
+            .length = 4,
+            .data = "\x08\x08\x08\x08",
+        };
 
-        _ = try posix.sendto(sock_fd, &response, 0, &client_addr, client_addr_len);
+        // const answer_length = answer.name.len + 10 + answer.data.len;
+        const answer_length = 12 + answer.data.len;
+        // TODO feat: answer.len
+        var response = try allocator.alloc(u8, 12 + question.len + answer_length);
+        defer allocator.free(response);
+
+        var offset: usize = 0;
+        @memcpy(response[offset..12], &header.toBytes());
+        offset += 12;
+
+        // const query_written = query("codecrafters.io", 1, 1, &response);
+        @memcpy(response[offset .. question.len + 12], question);
+        offset += question.len;
+
+        const answer_bytes = try answer.toBytes(allocator);
+        defer allocator.free(answer_bytes);
+        std.debug.print("{}:{}", .{ answer_length, answer_bytes.len });
+        @memcpy(
+            response[offset .. offset + answer_length],
+            answer_bytes,
+        );
+
+        _ = try posix.sendto(sock_fd, response, 0, &client_addr, client_addr_len);
     }
 }
