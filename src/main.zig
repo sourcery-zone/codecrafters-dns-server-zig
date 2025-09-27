@@ -3,6 +3,7 @@ const net = std.net;
 const posix = std.posix;
 const Header = @import("message/Header.zig");
 const Answer = @import("message/Answer.zig");
+const Question = @import("message/Question.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -36,7 +37,20 @@ pub fn main() !void {
 
         const received_bytes = try posix.recvfrom(sock_fd, &buf, 0, &client_addr, &client_addr_len);
         const qheader = Header.fromBytes(buf[0..12]);
-        const question = buf[12..received_bytes];
+
+        var questions: std.ArrayList(Question) = .empty;
+        defer questions.deinit(allocator);
+
+        var i: usize = 0;
+        var questions_len: usize = 0;
+        var qoffset: usize = 12;
+        while (i < qheader.qdcount) : (i += 1) {
+            const question = Question.parse(buf[qoffset..received_bytes]);
+            try questions.append(allocator, question.question);
+            qoffset += question.next;
+            // TODO refactor how I maintain the total questions length
+            questions_len += question.question.raw.len;
+        }
 
         const header = Header{
             .id = qheader.id,
@@ -53,6 +67,7 @@ pub fn main() !void {
             .nscount = 0,
             .arcount = 0,
         };
+
         const answer = Answer{
             .name = "\x0ccodecrafters\x02io",
             .type_ = 1,
@@ -64,19 +79,25 @@ pub fn main() !void {
 
         const answer_length = 12 + answer.data.len;
         // TODO feat: answer.len
-        var response = try allocator.alloc(u8, 12 + question.len + answer_length);
+        var response = try allocator.alloc(u8, 12 + questions_len + answer_length);
         defer allocator.free(response);
 
         var offset: usize = 0;
+        // add `header` to `response`
         @memcpy(response[offset..12], &header.toBytes());
         offset += 12;
 
-        @memcpy(response[offset .. question.len + 12], question);
-        offset += question.len;
+        // add `question` to `response`
+        // TODO refactor variable names
+        for (questions.items) |q| {
+            const question = q.raw;
+            @memcpy(response[offset .. offset + question.len], question);
+            offset += question.len;
+        }
 
+        // add `answer` to `response`
         const answer_bytes = try answer.toBytes(allocator);
         defer allocator.free(answer_bytes);
-        std.debug.print("{}:{}", .{ answer_length, answer_bytes.len });
         @memcpy(
             response[offset .. offset + answer_length],
             answer_bytes,

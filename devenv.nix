@@ -1,6 +1,12 @@
 { pkgs, lib, config, inputs, ... }:
 
-{
+let
+  python-packages = p: with p; [
+    pip
+    python-lsp-server
+    scapy
+  ];
+in {
   # https://devenv.sh/basics/
   env.GREET = "devenv";
 
@@ -8,9 +14,11 @@
   packages = with pkgs; [
     dig
     xxd
+    (python3.withPackages python-packages)
   ];
 
   # https://devenv.sh/languages/
+  languages.python.enable = true;
   languages.zig = {
     enable = true;
     package = inputs.zig.packages.${pkgs.system}."0.15.1";
