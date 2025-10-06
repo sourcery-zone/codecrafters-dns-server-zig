@@ -5,16 +5,17 @@ const Answer = @This();
 
 name: []const u8,
 type_: u16,
+label_start: usize,
 class: u16,
 ttl: u32,
 length: u16,
 data: []const u8,
 
 pub fn toBytes(self: Answer, allocator: std.mem.Allocator) ![]u8 {
-    var response = try allocator.alloc(u8, 12 + self.data.len);
+    var response = try allocator.alloc(u8, self.answer_length());
 
-    var offset: usize = 2;
-    @memcpy(response[0..offset], &[2]u8{ 0xc0, 0x0c });
+    var offset: usize = 2; // self.name.len;
+    @memcpy(response[0..offset], &[2]u8{ 0xc0, @intCast(self.label_start) });
 
     std.mem.writeInt(u16, response[offset..][0..2], self.type_, .big);
     offset += 2;
@@ -31,6 +32,10 @@ pub fn toBytes(self: Answer, allocator: std.mem.Allocator) ![]u8 {
     @memcpy(response[offset .. offset + self.data.len], self.data);
 
     return response;
+}
+
+pub fn answer_length(self: Answer) usize {
+    return 12 + self.data.len;
 }
 
 test "toBytes" {

@@ -37,20 +37,13 @@ pub fn main() !void {
 
         const received_bytes = try posix.recvfrom(sock_fd, &buf, 0, &client_addr, &client_addr_len);
         const qheader = Header.fromBytes(buf[0..12]);
+        std.debug.print("{s}\n{x}\n", .{ buf[0..received_bytes], buf[0..received_bytes] });
 
-        var questions: std.ArrayList(Question) = .empty;
-        defer questions.deinit(allocator);
-
-        var i: usize = 0;
-        var questions_len: usize = 0;
-        var qoffset: usize = 12;
-        while (i < qheader.qdcount) : (i += 1) {
-            const question = Question.parse(buf[qoffset..received_bytes]);
-            try questions.append(allocator, question.question);
-            qoffset += question.next;
-            // TODO refactor how I maintain the total questions length
-            questions_len += question.question.raw.len;
-        }
+        const questions = try Question.parse(
+            buf[12..received_bytes],
+            qheader.qdcount,
+            allocator,
+        );
 
         const header = Header{
             .id = qheader.id,
@@ -62,24 +55,36 @@ pub fn main() !void {
             .ra = 1,
             .z = 0,
             .rcode = if (qheader.opcode == 0) 0 else 4,
-            .qdcount = 1,
-            .ancount = 1, // Number of answers
+            .qdcount = qheader.qdcount,
+            .ancount = qheader.qdcount, // Number of answers
             .nscount = 0,
             .arcount = 0,
         };
 
-        const answer = Answer{
-            .name = "\x0ccodecrafters\x02io",
-            .type_ = 1,
-            .class = 1,
-            .ttl = 60,
-            .length = 4,
-            .data = "\x08\x08\x08\x08",
-        };
+        var answers: std.ArrayList(Answer) = .empty;
+        defer answers.deinit(allocator);
 
-        const answer_length = 12 + answer.data.len;
-        // TODO feat: answer.len
-        var response = try allocator.alloc(u8, 12 + questions_len + answer_length);
+        var question_length: usize = 0;
+        var answer_length: usize = 0;
+        for (questions) |q| {
+            const answer = Answer{
+                .name = q.label,
+                .label_start = q.label_start,
+                .type_ = q.qtype,
+                .class = q.qclass,
+                .ttl = 60,
+                .length = 4, // NOTE should it be hard coded?
+                .data = "\x08\x08\x08\x08",
+            };
+
+            try answers.append(allocator, answer);
+            // TODO feat: answer.len
+            // 2 bytes for compressed name, 10 for details, and the rest data type
+            answer_length += answer.answer_length();
+            question_length += q.raw.len;
+        }
+
+        var response = try allocator.alloc(u8, 12 + question_length + answer_length);
         defer allocator.free(response);
 
         var offset: usize = 0;
@@ -89,19 +94,25 @@ pub fn main() !void {
 
         // add `question` to `response`
         // TODO refactor variable names
-        for (questions.items) |q| {
+        for (questions) |q| {
             const question = q.raw;
-            @memcpy(response[offset .. offset + question.len], question);
+            @memcpy(
+                response[offset .. offset + question.len],
+                question,
+            );
             offset += question.len;
         }
 
         // add `answer` to `response`
-        const answer_bytes = try answer.toBytes(allocator);
-        defer allocator.free(answer_bytes);
-        @memcpy(
-            response[offset .. offset + answer_length],
-            answer_bytes,
-        );
+        for (answers.items) |answer| {
+            const answer_bytes = try answer.toBytes(allocator);
+            defer allocator.free(answer_bytes);
+            @memcpy(
+                response[offset .. offset + answer_bytes.len],
+                answer_bytes,
+            );
+            offset += answer_bytes.len;
+        }
 
         _ = try posix.sendto(sock_fd, response, 0, &client_addr, client_addr_len);
     }

@@ -1,0 +1,6 @@
+# Auto-load this file when starting LLDB in the project
+# process handle SIGINT -p true -s false -n false
+
+# command script import ./.lldb/rr.py
+# command script add -f rr.rr rr
+command alias rr script lldb.debugger.GetSelectedTarget().process.Kill(); import subprocess; subprocess.run("zig build".split()); lldb.debugger.HandleCommand("run");

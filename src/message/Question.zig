@@ -4,6 +4,7 @@ const Question = @This();
 
 name: []u8,
 label: []u8,
+label_start: usize,
 qtype: u16,
 qclass: u16,
 raw: []u8,
@@ -93,6 +94,7 @@ pub fn parse(
         const question = Question{
             .name = parsed_label.name,
             .label = try name_as_label(parsed_label.name, allocator),
+            .label_start = first_offset + 12,
             .qtype = qtype,
             .qclass = qclass,
             .raw = buf[first_offset..offset],
