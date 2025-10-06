@@ -14,6 +14,7 @@ in {
   packages = with pkgs; [
     dig
     xxd
+    lldb
     (python3.withPackages python-packages)
   ];
 

@@ -8,6 +8,7 @@ pub fn build(b: *std.Build) void {
             .root_source_file = b.path("src/main.zig"),
             .target = b.graph.host,
         }),
+        .use_llvm = true,
     });
 
     // This declares intent for the executable to be installed into the
