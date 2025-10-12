@@ -11,6 +11,28 @@ pub fn build(b: *std.Build) void {
         .use_llvm = true,
     });
 
+    const test_files = .{
+        "src/main.zig",
+        "src/Arguments.zig",
+        "src/Message.zig",
+        "src/message/Answer.zig",
+        "src/message/Header.zig",
+        "src/message/Label.zig",
+        "src/message/Question.zig",
+    };
+
+    const test_step = b.step("test", "Run tests");
+    inline for (test_files) |path| {
+        const t = b.addTest(.{
+            .root_module = b.createModule(.{
+                .root_source_file = b.path(path),
+                .target = b.graph.host,
+            }),
+        });
+
+        test_step.dependOn(&t.step);
+    }
+
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).
