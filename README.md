@@ -1,5 +1,28 @@
 [![progress-banner](https://backend.codecrafters.io/progress/dns-server/7280366d-0989-4882-9647-547c29cc8014)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
 
+## Live Streams
+
+I live streamed more than 17 hours of my progress in ~1 hour sessions on Youtube.
+
+<p align="center">
+  <a href="https://www.youtube.com/playlist?list=PLvWC0OdoEeTgVkVMyvBSgvwv4_oVI0bkF">
+    <img src="https://img.youtube.com/vi/Y4blRApX8jY/0.jpg" alt="Build to Learn: DNS Server in Zig - Playlist" />
+  </a>
+</p>
+
+## My Notes
+
+- ✅ [Session 1](https://sourcery.zone/articles/2025/09/livestream-log-building-a-dns-server-in-zig-part-1/)
+- ✅ [Session 2](https://sourcery.zone/articles/2025/09/livestream-log-building-a-dns-server-in-zig-part-2/)
+- ✅ [Session 3](https://sourcery.zone/articles/2025/09/livestream-log-building-a-dns-server-in-zig-part-3/)
+- ✅ [Session 4](https://sourcery.zone/articles/2025/09/livestream-log-building-a-dns-server-in-zig-part-4/)
+- ✅ [Session 5](https://sourcery.zone/articles/2025/09/livestream-log-building-a-dns-server-in-zig-part-5/)
+- ✅ [Session 6, 7, and 8](https://sourcery.zone/articles/2025/09/livestream-log-building-a-dns-server-in-zig-part-6-7-and-8/)
+- ✅ [Session 9, and 10](https://sourcery.zone/articles/2025/09/livestream-log-building-a-dns-server-in-zig-part-9-and-10/)
+- ✅ [Sessions 11 to 17](https://sourcery.zone/articles/2025/10/livestream-log-building-a-dns-server-in-zig-conclusion/)
+
+## CodeCrafter's Readme
+
 This is a starting point for Zig solutions to the
 ["Build Your Own DNS server" Challenge](https://app.codecrafters.io/courses/dns-server/overview).
 
